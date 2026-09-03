@@ -1,0 +1,89 @@
+GOOGLE SIGN-IN - DIAGNOSTIC + FIX
+=================================
+For petaqr.com. One file only.
+
+WHAT IS IN THIS ZIP
+-------------------
+app/Http/Controllers/Auth/LoginController.php
+
+This is YOUR file, the exact copy you sent me, with a small patch. I did not
+replace it with mine - I checked yours against the original script first and
+they matched byte for byte, so nothing of yours is being overwritten.
+
+
+HOW TO INSTALL
+--------------
+1. Back up the current file first. In cPanel File Manager go to
+
+       app/Http/Controllers/Auth/
+
+   right-click LoginController.php, choose Copy, and save it as
+   LoginController.php.backup in the same folder. If anything at all goes
+   wrong, rename that back and you are exactly where you started.
+
+2. Upload the LoginController.php from this zip into that same folder,
+   replacing the current one.
+
+3. Open your .env file (File Manager, site root, turn on "Show hidden files")
+   and add this line at the end:
+
+       GOOGLE_DEBUG=on
+
+   Save.
+
+4. Open petaqr.com in a private window and click "Sign in with Google".
+
+
+WHAT YOU WILL SEE
+-----------------
+Instead of being dumped back on the login page with no explanation, you will
+now get a plain text page telling you exactly what went wrong. Something like:
+
+    Google sign-in failed while talking back to Google.
+
+    Type:    Laravel\Socialite\Two\InvalidStateException
+    Message: ...
+
+Send me that text and I will know precisely what to fix. It is one screen of
+text, no need to hunt through logs.
+
+If instead it just signs you in - then one of the other fixes in this file was
+the problem all along, and we are done.
+
+
+WHEN WE ARE FINISHED
+--------------------
+Delete the GOOGLE_DEBUG=on line from .env, or change it to GOOGLE_DEBUG=off.
+With that line gone the page behaves normally again for your visitors. Nothing
+technical is ever shown to a normal user while it is off.
+
+
+WHAT ELSE THIS FILE FIXES
+-------------------------
+1. Errors are no longer thrown away. Every failure is now written to
+   storage/logs/laravel.log with the tag [GOOGLE-LOGIN], whether debug is on
+   or off. Previously a failed Google sign-in left no trace anywhere, which is
+   why we had nothing to go on.
+
+2. Administrators can now sign in with Google. The script always sent people
+   to /user/dashboard after a Google sign-in, but that page only admits normal
+   users - an administrator was thrown straight back out to the login page.
+   Admins now go to /admin/dashboard.
+
+3. New Google accounts were being saved with the hash of an empty password.
+   The original line was bcrypt($newUser->user_id), and user_id does not exist
+   on a new record, so it hashed nothing at all. Now a long random value.
+
+4. New Google accounts are marked as email-verified. Google has already
+   confirmed the address, so there is no reason to send them through your
+   email verification a second time.
+
+5. If an account already exists with that email address but is not active, you
+   now get told so instead of being silently bounced.
+
+
+WHAT IT DOES NOT CHANGE
+-----------------------
+Normal email and password login is untouched. So is the admin panel, and so is
+everything else in the file. With GOOGLE_DEBUG off, a visitor sees exactly what
+they saw before.
