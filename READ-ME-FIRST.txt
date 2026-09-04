@@ -202,3 +202,40 @@ VERIFIED BEFORE SENDING
 - Counted the Google button references in the finished file: exactly 1.
 - Confirmed no leftovers of the old black block.
 - CRLF line endings preserved.
+
+
+===========================================================
+ADDED 4 SEP - GOOGLE OPTION IN THE MOBILE MENU
+===========================================================
+
+    resources/views/website/includes/topbar.blade.php
+
+Your copy, patched. I checked it against the version I sent you in August
+(the menu-links fix) and it is byte for byte identical - so that fix is
+installed and untouched, and this patch keeps it.
+
+WHAT CHANGED - 18 lines added to ONE of the two blocks
+
+This file contains the auth buttons TWICE: once for the desktop top bar and
+once for the mobile slide-out menu. They are identical apart from indentation.
+I added the Google button only to the MOBILE one, because the desktop top bar
+has no room (measured: 85px of clear space, the button needs 218px).
+
+It sits inside the existing @guest block, so it only ever shows to visitors
+who are not already logged in - same as Sign In and Sign Up.
+
+INSTALL
+
+1. Back up resources/views/website/includes/topbar.blade.php
+2. Paste the new one in
+3. Empty storage/framework/views (keep the folder)
+4. Open petaqr.com on your phone, or narrow your browser window, and open the
+   menu with the hamburger icon
+
+VERIFIED BEFORE SENDING
+
+- Compiled through Laravel's Blade compiler and linted. Clean, before and after.
+- Confirmed the patch landed in the mobile block and the desktop block is
+  unchanged.
+- Exactly one Google button reference in the finished file.
+- CRLF preserved.
