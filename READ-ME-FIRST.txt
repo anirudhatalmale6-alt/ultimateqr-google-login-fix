@@ -256,12 +256,15 @@ script. It has three differences of its own, all preserved:
 If I had sent you my own copy of this file, your prices would have jumped a
 size and lost their currency formatting.
 
-WHAT CHANGED - 22 lines added in each of the two bands, nothing removed
+WHAT CHANGED - 22 lines added in ONE band, nothing removed
+
+Updated 4 Sep: this file now patches ONLY the "Many useful features" band, as
+you asked. The lower band is left exactly as it was.
 
 The two bands are structurally identical and differ only by which content rows
 they read - $page[23]/[24] in the "Many useful features" one and $page[41]/[42]
-in the lower one. I anchored on those numbers so there was no chance of
-patching the same band twice and missing the other.
+in the lower one. I anchored on those numbers, so "only the first band" is an
+exact instruction rather than a guess about which block is which.
 
 The button is centred under "Signup now!", 248px wide, in the same white
 Google style as the login and register pages.
@@ -271,15 +274,17 @@ INSTALL
 1. Back up resources/views/website/index.blade.php
 2. Paste the new one in
 3. Empty storage/framework/views (keep the folder)
-4. Reload petaqr.com in a private window and scroll to both bands
+4. Reload petaqr.com in a private window and scroll to the
+   "Many useful features" band
 
 VERIFIED BEFORE SENDING
 
-- Counted the Google buttons in the finished file: exactly 2, one per band.
+- Counted the Google buttons in the finished file: exactly 1.
+- Confirmed the lower band's markup is untouched.
 - Confirmed your three changes are still present.
 - Compiled through Laravel's Blade compiler and linted the generated PHP.
   Clean, before and after.
 - Compared the button styling in the file against the mockup you approved,
-  character for character with whitespace normalised. Both bands match, so the
+  character for character with whitespace normalised. It matches, so the
   picture is the actual output rather than an approximation.
 - CRLF preserved.
