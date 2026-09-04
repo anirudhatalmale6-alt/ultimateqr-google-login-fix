@@ -113,3 +113,54 @@ WHAT IT DOES NOT CHANGE
 Normal email and password login is untouched. So is the admin panel, and so is
 everything else in the file. With GOOGLE_DEBUG off, a visitor sees exactly what
 they saw before.
+
+
+===============================================================
+ADDED 4 SEP - "CREATE ACCOUNT WITH GOOGLE" ON THE REGISTER PAGE
+===============================================================
+
+    resources/views/auth/register.blade.php
+
+This is YOUR file with one block added. I diffed your copy against the
+original script first and yours has five wording changes of your own in it -
+"Join the PetaQR community", "Start your journey with us", the "Your name" and
+"your@email.com" placeholders, and "Please sign in here". All five are still
+there untouched. Nothing of yours has been overwritten.
+
+INSTALL
+
+1. Back it up first: in cPanel File Manager go to
+
+       resources/views/auth/
+
+   right-click register.blade.php, Copy, save as register.blade.php.backup
+
+2. Put the new one in the same folder.
+
+3. Empty storage/framework/views (keep the folder). Blade caches compiled
+   templates there, and without this step you will keep seeing the old page
+   and think the change did not work.
+
+4. Reload petaqr.com/register in a private window.
+
+WHAT CHANGED - exactly 8 lines added, nothing removed
+
+The button sits under Sign Up and above "Already have an account?", styled the
+same as the Sign in with Google button on your login page.
+
+It is wrapped in @if (env('GOOGLE_ENABLE') == 'on'), the same switch the login
+page uses. So if you ever turn Google off in .env, the button disappears from
+both pages at once rather than leaving a dead button on one of them.
+
+It points at the same address as the login page button. That is correct, not a
+copy-paste slip: with Google there is no separate "register". You send the
+person to Google, and when they come back the site either finds their account
+or creates one. Same button, two jobs, only the label differs.
+
+VERIFIED BEFORE SENDING
+
+- Compiled the template with Laravel's own Blade compiler and linted the PHP it
+  produces. Clean, both before and after the change.
+- Checked the compiled output points at route('login.google') and escapes the
+  label properly.
+- Line endings kept as CRLF, same as your file arrived.
