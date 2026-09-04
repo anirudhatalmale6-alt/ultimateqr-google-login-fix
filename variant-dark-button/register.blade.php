@@ -30,7 +30,7 @@ $setting = Setting::where('status', 1)->first();
                 @if (env('GOOGLE_ENABLE') == 'on')
                 <a href="{{ route('login.google') }}"
                     style="display:flex;align-items:center;justify-content:center;gap:10px;width:100%;
-                           background:#ffffff;border:1px solid #dadce0;color:#3c4043;font-weight:600;
+                           background:#131314;border:1px solid #8e918f;color:#e3e3e3;font-weight:600;
                            font-size:15px;line-height:1.5;padding:12px 16px;
                            border-radius:.75rem .75rem 0 .75rem;text-decoration:none;">
                     <svg width="20" height="20" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" style="flex:none">
