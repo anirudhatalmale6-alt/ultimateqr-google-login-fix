@@ -164,3 +164,41 @@ VERIFIED BEFORE SENDING
 - Checked the compiled output points at route('login.google') and escapes the
   label properly.
 - Line endings kept as CRLF, same as your file arrived.
+
+
+===========================================================
+ADDED 4 SEP - LOGIN PAGE MATCHED TO THE REGISTER PAGE
+===========================================================
+
+    resources/views/auth/login.blade.php
+
+Your copy, patched. I diffed it against the original script first: this one is
+byte for byte identical to the vendor file, so you have never hand-edited it
+and nothing of yours is at risk here.
+
+TWO CHANGES, and the first one matters:
+
+1. The OLD black "Sign in with Google" button is REMOVED. It used to sit under
+   the Sign In button. If it were left in place you would end up with two
+   Google buttons on the same page.
+
+2. The new white one is added above the form, with the "or" divider, exactly
+   like the register page.
+
+So the file now contains exactly one Google button. I checked that
+specifically after patching rather than assuming.
+
+INSTALL - same as the register page
+
+1. Back up resources/views/auth/login.blade.php first.
+2. Paste the new one in.
+3. Empty storage/framework/views (keep the folder).
+4. Reload petaqr.com/login in a private window.
+
+VERIFIED BEFORE SENDING
+
+- Compiled through Laravel's Blade compiler and linted the generated PHP.
+  Clean, before and after.
+- Counted the Google button references in the finished file: exactly 1.
+- Confirmed no leftovers of the old black block.
+- CRLF line endings preserved.
