@@ -41,11 +41,37 @@ now get a plain text page telling you exactly what went wrong. Something like:
 
     Google sign-in failed while talking back to Google.
 
-    Type:    Laravel\Socialite\Two\InvalidStateException
+    Type:    GuzzleHttp\Exception\ClientException
     Message: ...
+
+    ----- WHAT THE SITE ACTUALLY SENT TO GOOGLE -----
+
+    Client ID: ...
+    Redirect:  ...
+    Client secret length: 35 characters
+    Client secret starts: GOCSPX-
+    Client secret ends:   [ab12]
+
+    Lines found in .env:
+      GOOGLE_CLIENT_ID      1
+      GOOGLE_CLIENT_SECRET  1
+      ...
 
 Send me that text and I will know precisely what to fix. It is one screen of
 text, no need to hunt through logs.
+
+The second half is there because "the value in the file" and "the value the
+site actually uses" are not always the same thing. Two things commonly break
+that link, and both are visible above:
+
+ - the same key appearing TWICE in .env. Laravel keeps the first one it reads
+   and silently ignores every later one, so a new value pasted at the bottom
+   of the file never takes effect.
+ - a stray space, line break or quote around the value.
+
+The secret itself is never printed. Only its length and the same last four
+characters that the Google console already shows you, so you can compare the
+two directly.
 
 If instead it just signs you in - then one of the other fixes in this file was
 the problem all along, and we are done.

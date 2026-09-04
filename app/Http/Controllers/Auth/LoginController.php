@@ -97,7 +97,8 @@ class LoginController extends Controller
             if ($debug) {
                 return response("Google sign-in failed while talking back to Google.\n\n"
                     . "Type:    " . get_class($e) . "\n"
-                    . "Message: " . $e->getMessage() . "\n", 500)
+                    . "Message: " . $e->getMessage() . "\n\n"
+                    . $this->googleCredentialReport(), 500)
                     ->header('Content-Type', 'text/plain; charset=utf-8');
             }
 
@@ -152,5 +153,88 @@ class LoginController extends Controller
         }
 
         return redirect()->to('/user/dashboard');
+    }
+
+    /**
+     * Reports what the application ACTUALLY resolved for the Google
+     * credentials - which is not always what you think you saved. Socialite
+     * reads config('services.google'), so that is what is read back here.
+     *
+     * The secret itself is never printed. Only its length and the same last
+     * four characters that the Google console shows you.
+     *
+     * Only ever reachable with GOOGLE_DEBUG=on in .env.
+     */
+    private function googleCredentialReport()
+    {
+        $id       = (string) config('services.google.client_id');
+        $secret   = (string) config('services.google.client_secret');
+        $redirect = (string) config('services.google.redirect');
+
+        $out  = "----- WHAT THE SITE ACTUALLY SENT TO GOOGLE -----\n\n";
+        $out .= "Client ID: " . ($id === '' ? '(EMPTY)' : $id) . "\n";
+        $out .= "Redirect:  " . ($redirect === '' ? '(EMPTY)' : $redirect) . "\n\n";
+
+        if ($secret === '') {
+            $out .= "Client secret: (EMPTY - the site sent no secret at all)\n";
+        } else {
+            $out .= "Client secret length: " . strlen($secret) . " characters\n";
+            $out .= "Client secret starts: " . substr($secret, 0, 7) . "\n";
+            $out .= "Client secret ends:   [" . substr($secret, -4) . "]"
+                 .  "   <-- compare THIS with the console\n";
+
+            if ($secret !== trim($secret)) {
+                $out .= "WARNING: there is a space or a line break wrapped around the secret.\n";
+            }
+            if (strpos($secret, '"') !== false || strpos($secret, "'") !== false) {
+                $out .= "WARNING: the secret still has a quote character inside it.\n";
+            }
+        }
+
+        // The usual reason for "I changed it and nothing happened": the key is
+        // in .env more than once. Laravel keeps the FIRST one it reads and
+        // ignores every later one, so a new value pasted at the bottom of the
+        // file is thrown away without a word.
+        $envPath = base_path('.env');
+
+        if (is_readable($envPath)) {
+            $counts = [
+                'GOOGLE_CLIENT_ID'     => 0,
+                'GOOGLE_CLIENT_SECRET' => 0,
+                'GOOGLE_REDIRECT'      => 0,
+                'GOOGLE_ENABLE'        => 0,
+            ];
+
+            foreach (file($envPath) as $line) {
+                foreach (array_keys($counts) as $key) {
+                    if (preg_match('/^\s*(?:export\s+)?' . $key . '\s*=/', $line)) {
+                        $counts[$key]++;
+                    }
+                }
+            }
+
+            $out .= "\nLines found in .env:\n";
+            foreach ($counts as $key => $n) {
+                $out .= "  " . str_pad($key, 22) . $n;
+                if ($n === 0) {
+                    $out .= "   <-- MISSING";
+                } elseif ($n > 1) {
+                    $out .= "   <-- DUPLICATE. Only the FIRST is used, the others are ignored.";
+                }
+                $out .= "\n";
+            }
+        } else {
+            $out .= "\n(.env could not be read from here)\n";
+        }
+
+        if (file_exists(base_path('bootstrap/cache/config.php'))) {
+            $out .= "\nNOTE: a cached config file exists at bootstrap/cache/config.php.\n"
+                 .  "While that file is there, edits to .env may be ignored. Delete it.\n";
+        }
+
+        $out .= "\nNothing above reveals the secret. The last 4 characters are what the\n"
+             .  "Google console shows you as well, which is why they are here.\n";
+
+        return $out;
     }
 }
