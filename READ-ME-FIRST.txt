@@ -288,3 +288,155 @@ VERIFIED BEFORE SENDING
   character for character with whitespace normalised. It matches, so the
   picture is the actual output rather than an approximation.
 - CRLF preserved.
+
+
+===========================================================
+ADDED 5 SEP - GOOGLE ONE TAP (the popup in the corner)
+===========================================================
+
+    app/Http/Controllers/Auth/GoogleOneTapController.php   NEW FILE
+    resources/views/website/includes/onetap.blade.php      NEW FILE
+
+Both are brand new files. They replace nothing, so there is no risk of
+overwriting anything of yours. Two existing files need two lines added each -
+see WIRING below.
+
+FIRST, SOMETHING THAT CHANGED AT GOOGLE'S END
+
+Before writing any of this I checked Google's current documentation rather
+than going from memory, and one thing had moved. One Tap now runs through the
+browser's own FedCM system. The old data-use_fedcm_for_prompt setting that
+every older tutorial tells you to add is now, in Google's words, "deprecated
+and will be ignored if used". It is not in this code. Two things follow from
+that, and they are worth knowing before you judge whether it works:
+
+ - the prompt is drawn by the BROWSER, not by your site. It appears in the top
+   right of the browser window. That is exactly where you asked for it, but it
+   also means you cannot restyle it, and I cannot show you a screenshot of it
+   from here - it only appears on a real HTTPS domain that Google recognises.
+
+ - it will not appear for everyone. It shows to visitors who are signed in to
+   Google in that browser and have third-party sign-in enabled. If you dismiss
+   it a few times, Google stops showing it to you for a while - hours, then
+   longer. That is Google's cooldown, not a fault. Test in a fresh private
+   window, and do not judge it by whether it appears for you on the tenth try.
+
+HOW THE SECURITY WORKS - the part that matters
+
+The popup hands the browser a signed token, the browser posts it to your site.
+A token is just text in a POST body, so anyone can send one. What nobody can
+do is forge Google's signature on it. So the controller refuses the sign-in
+unless ALL of these hold:
+
+  - the signature matches one of Google's current public signing keys
+  - the token says Google issued it
+  - the token was issued FOR THIS SITE, not another one. Without this check a
+    token minted for any other website using Google sign-in would be accepted
+    here as a login. This is the check most tutorials leave out.
+  - it has not expired
+  - the email on it is one Google has itself verified
+
+The name, email and picture are read out of the signed token, never out of
+anything the browser sends alongside it.
+
+WHAT I TESTED, AND HOW
+
+Not "it looks right". I installed the whole thing on a local copy of your site
+running against a real database, and drove it over HTTP the way the browser
+would. 21 checks, all passing:
+
+  A genuine token
+    - accepted, account created, person signed in
+    - lands on the plans page, same as any brand new account
+    - auth_type Google, role_id 2, status 1, marked email-verified
+    - the password saved is NOT the hash of an empty string (that is the
+      vendor bug we already fixed on the button path)
+    - signing in a second time reuses the account, no duplicate
+
+  Every one of these REFUSED, with the visitor left signed out:
+    - a token signed with a different key (a forgery)
+    - a token issued for a different website
+    - an expired token
+    - a token where Google had not verified the email
+    - a token with the payload edited after signing
+    - an unsigned token, alg=none - the classic JWT bypass
+    - junk that is not a token at all
+    - a wrong CSRF token
+  And no account was created by any of them.
+
+The signature checking uses firebase/php-jwt, which is already inside your
+vendor folder - it comes with the script. Nothing needs installing, which
+matters because you have no shell access.
+
+WIRING - two lines in each of two files
+
+1. routes/web.php
+
+   Find this line (it is about line 365, just under "// Google auth routes"):
+
+       Route::get('/sign-in-with-google', [App\Http\Controllers\Auth\LoginController::class, "handleProviderCallback"]);
+
+   Add these two lines directly underneath it:
+
+    // Google One Tap - the sign-in prompt in the corner of the screen
+    Route::post('/google-one-tap', [App\Http\Controllers\Auth\GoogleOneTapController::class, "store"])->name('google.onetap')->middleware('throttle:20,1');
+
+2. resources/views/layouts/guest.blade.php
+
+   Find the closing </body> tag at the bottom. Add these two lines just BEFORE
+   it:
+
+    {{-- Google One Tap --}}
+    @include('website.includes.onetap')
+
+   This one file is the layout behind your home page, login page and register
+   page, so those two lines are all it takes to have the popup on all of them.
+
+If you would rather not hand-edit, send me those two files and I will patch
+them and send them back the same way as the others - I would rather diff your
+copies against the original than assume.
+
+3. .env - add one line:
+
+       GOOGLE_ONE_TAP=on
+
+   GOOGLE_ENABLE=on is still needed too. Removing GOOGLE_ONE_TAP turns off the
+   popup and leaves the buttons working.
+
+4. Empty storage/framework/views (keep the folder).
+
+5. IN THE GOOGLE CONSOLE - and this one is not optional
+
+   Open your OAuth client and add to "Authorised JavaScript origins":
+
+       https://petaqr.com
+       https://www.petaqr.com
+
+   Scheme and hostname only. No trailing slash, no path.
+
+   This is a DIFFERENT box from "Authorised redirect URIs". Leave the redirect
+   URIs exactly as they are - the sign-in buttons depend on them.
+
+   Both addresses are needed because I checked, and www.petaqr.com serves the
+   full site on its own certificate rather than redirecting to the bare
+   domain. If only one origin is registered, the popup silently fails to
+   appear for every visitor who arrives on the other one - no error, nothing
+   in the logs, just no popup.
+
+WHAT IT DOES NOT DO
+
+It does not send a welcome email. Neither does the existing Sign in with
+Google button - the vendor script only sends one for email-and-password
+signups. So Google users have never received one. I left that alone rather
+than change it quietly. Say the word and it is a small addition to both.
+
+TROUBLESHOOTING
+
+The popup never appears:
+  - open the browser console (F12). Anything Google refuses is reported there
+  - the most common cause by far is the JavaScript origin not being registered
+  - you may be in Google's cooldown from dismissing it. Fresh private window
+
+The popup appears but signing in does nothing:
+  - storage/logs/laravel.log, look for [GOOGLE-ONE-TAP]. Every refusal is
+    logged with the reason
