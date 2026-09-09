@@ -387,10 +387,27 @@ WIRING - two lines in each of two files
    it:
 
     {{-- Google One Tap --}}
-    @include('website.includes.onetap')
+    @includeIf('website.includes.onetap')
 
    This one file is the layout behind your home page, login page and register
    page, so those two lines are all it takes to have the popup on all of them.
+
+   NOTE THE "If" ON THE END OF @includeIf. It matters more than it looks.
+
+   Plain @include stops the whole page dead if it cannot find the file - and
+   because this is the shared layout, that means EVERY public page at once,
+   not just one. @includeIf skips quietly instead. So if the file ends up in
+   the wrong folder, or picks up a .txt on the end during upload, you get a
+   site with no popup on it rather than a site that is down.
+
+   I proved both, on a local copy of your site:
+
+     @include   + file missing  ->  500 error on every page
+     @includeIf + file missing  ->  every page loads normally, no popup
+     @includeIf + file present  ->  every page loads, popup markup there
+
+   If the popup does not appear after installing, that is the first thing to
+   check: the file is not where Blade is looking.
 
 If you would rather not hand-edit, send me those two files and I will patch
 them and send them back the same way as the others - I would rather diff your
@@ -433,6 +450,9 @@ than change it quietly. Say the word and it is a small addition to both.
 TROUBLESHOOTING
 
 The popup never appears:
+  - first check onetap.blade.php really is in resources/views/website/includes/
+    with no extra extension on the name. With @includeIf a missing file is
+    silent by design
   - open the browser console (F12). Anything Google refuses is reported there
   - the most common cause by far is the JavaScript origin not being registered
   - you may be in Google's cooldown from dismissing it. Fresh private window
